@@ -114,7 +114,7 @@ function formatIssueBody(data: z.infer<typeof bugReportSchema>): string {
     }
 
     if (data.environmentInfo.octotaskVersion) {
-      body += `- OctoTask: ${data.environmentInfo.octotaskVersion}\n`;
+      body += `- octotask: ${data.environmentInfo.octotaskVersion}\n`;
     }
 
     if (data.environmentInfo.aiProviders) {
@@ -136,7 +136,7 @@ function formatIssueBody(data: z.infer<typeof bugReportSchema>): string {
     body += `**Contact:** ${data.contactEmail}\n\n`;
   }
 
-  body += '---\n*Submitted via OctoTask bug report feature*';
+  body += '---\n*Submitted via octotask bug report feature*';
 
   return body;
 }
@@ -194,7 +194,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const githubToken =
       (context?.cloudflare?.env as any)?.GITHUB_BUG_REPORT_TOKEN || process.env.GITHUB_BUG_REPORT_TOKEN;
     const targetRepo =
-      (context?.cloudflare?.env as any)?.BUG_REPORT_REPO || process.env.BUG_REPORT_REPO || 'KhulnaSoft/octotask';
+      (context?.cloudflare?.env as any)?.BUG_REPORT_REPO || process.env.BUG_REPORT_REPO || 'octotask/octotask';
 
     if (!githubToken) {
       console.error('GitHub bug report token not configured');
@@ -207,7 +207,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     // Initialize GitHub client
     const octokit = new Octokit({
       auth: githubToken,
-      userAgent: 'octotask-app',
+      userAgent: 'octotask-bug-reporter',
     });
 
     // Create GitHub issue

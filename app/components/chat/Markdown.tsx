@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
-import type { BundledLanguage } from 'shiki';
+import { bundledLanguages, isSpecialLang, type BundledLanguage, type SpecialLanguage } from 'shiki';
 import { createScopedLogger } from '~/utils/logger';
 import { rehypePlugins, remarkPlugins, allowedHTMLElements } from '~/utils/markdown';
 import { Artifact, openArtifactInWorkbench } from './Artifact';
@@ -32,7 +32,7 @@ export const Markdown = memo(
         div: ({ className, children, node, ...props }) => {
           const dataProps = node?.properties as Record<string, unknown>;
 
-          if (className?.includes('__octoArtifact__')) {
+          if (className?.includes('__octotaskArtifact__')) {
             const messageId = node?.properties.dataMessageId as string;
             const artifactId = node?.properties.dataArtifactId as string;
 
@@ -47,7 +47,7 @@ export const Markdown = memo(
             return <Artifact messageId={messageId} artifactId={artifactId} />;
           }
 
-          if (className?.includes('__octoSelectedElement__')) {
+          if (className?.includes('__octotaskSelectedElement__')) {
             const messageId = node?.properties.dataMessageId as string;
             const elementDataAttr = node?.properties.dataElement as string;
 
@@ -67,27 +67,27 @@ export const Markdown = memo(
             }
 
             return (
-              <div className="bg-octo-elements-background-depth-3 border border-octo-elements-borderColor rounded-lg p-3 my-2">
+              <div className="bg-octotask-elements-background-depth-3 border border-octotask-elements-borderColor rounded-lg p-3 my-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-mono bg-octo-elements-background-depth-2 px-2 py-1 rounded text-octo-elements-textTer">
+                  <span className="text-xs font-mono bg-octotask-elements-background-depth-2 px-2 py-1 rounded text-octotask-elements-textTer">
                     {elementData?.tagName}
                   </span>
                   {elementData?.className && (
-                    <span className="text-xs text-octo-elements-textSecondary">.{elementData.className}</span>
+                    <span className="text-xs text-octotask-elements-textSecondary">.{elementData.className}</span>
                   )}
                 </div>
-                <code className="block text-sm !text-octo-elements-textSecondary !bg-octo-elements-background-depth-2 border border-octo-elements-borderColor p-2 rounded">
+                <code className="block text-sm !text-octotask-elements-textSecondary !bg-octotask-elements-background-depth-2 border border-octotask-elements-borderColor p-2 rounded">
                   {elementData?.displayText}
                 </code>
               </div>
             );
           }
 
-          if (className?.includes('__octoThought__')) {
+          if (className?.includes('__octotaskThought__')) {
             return <ThoughtBox title="Thought process">{children}</ThoughtBox>;
           }
 
-          if (className?.includes('__octoQuickAction__') || dataProps?.dataOctoQuickAction) {
+          if (className?.includes('__octotaskQuickAction__') || dataProps?.dataOctotaskQuickAction) {
             return <div className="flex items-center gap-2 flex-wrap mt-3.5">{children}</div>;
           }
 
@@ -108,10 +108,14 @@ export const Markdown = memo(
             firstChild.tagName === 'code' &&
             firstChild.children[0].type === 'text'
           ) {
-            const { className, ...rest } = firstChild.properties;
-            const [, language = 'plaintext'] = /language-(\w+)/.exec(String(className) || '') ?? [];
+            const { className, language: _ignoredLanguage, ...rest } = firstChild.properties as Record<string, unknown>;
+            const [, rawLanguage] = /language-(\w+)/.exec(String(className) || '') ?? [];
+            const language: BundledLanguage | SpecialLanguage =
+              rawLanguage && (rawLanguage in bundledLanguages || isSpecialLang(rawLanguage))
+                ? (rawLanguage as BundledLanguage | SpecialLanguage)
+                : 'plaintext';
 
-            return <CodeBlock code={firstChild.children[0].value} language={language as BundledLanguage} {...rest} />;
+            return <CodeBlock code={firstChild.children[0].value} language={language} {...rest} />;
           }
 
           return <pre {...rest}>{children}</pre>;
@@ -120,8 +124,8 @@ export const Markdown = memo(
           const dataProps = node?.properties as Record<string, unknown>;
 
           if (
-            dataProps?.class?.toString().includes('__octoQuickAction__') ||
-            dataProps?.dataOctoQuickAction === 'true'
+            dataProps?.class?.toString().includes('__octotaskQuickAction__') ||
+            dataProps?.dataOctotaskQuickAction === 'true'
           ) {
             const type = dataProps['data-type'] || dataProps.dataType;
             const message = dataProps['data-message'] || dataProps.dataMessage;
@@ -140,7 +144,7 @@ export const Markdown = memo(
 
             return (
               <button
-                className="rounded-md justify-center px-3 py-1.5 text-xs bg-octo-elements-item-backgroundAccent text-octo-elements-item-contentAccent opacity-90 hover:opacity-100 flex items-center gap-2 cursor-pointer"
+                className="rounded-md justify-center px-3 py-1.5 text-xs bg-octotask-elements-item-backgroundAccent text-octotask-elements-item-contentAccent opacity-90 hover:opacity-100 flex items-center gap-2 cursor-pointer"
                 data-type={type}
                 data-message={message}
                 data-path={path}
@@ -216,23 +220,23 @@ export const Markdown = memo(
  *
  * @example
  * // Removes code fences around artifact
- * const input = "```xml\n<div class='__octoArtifact__'></div>\n```";
+ * const input = "```xml\n<div class='__octotaskArtifact__'></div>\n```";
  * stripCodeFenceFromArtifact(input);
- * // Returns: "\n<div class='__octoArtifact__'></div>\n"
+ * // Returns: "\n<div class='__octotaskArtifact__'></div>\n"
  *
  * @remarks
- * - Only removes code fences that directly wrap an artifact (marked with __octoArtifact__ class)
+ * - Only removes code fences that directly wrap an artifact (marked with __octotaskArtifact__ class)
  * - Handles code fences with optional language specifications (e.g. ```xml, ```typescript)
  * - Preserves original content if no artifact is found
  * - Safely handles edge cases like empty input or artifacts at start/end of content
  */
 export const stripCodeFenceFromArtifact = (content: string) => {
-  if (!content || !content.includes('__octoArtifact__')) {
+  if (!content || !content.includes('__octotaskArtifact__')) {
     return content;
   }
 
   const lines = content.split('\n');
-  const artifactLineIndex = lines.findIndex((line) => line.includes('__octoArtifact__'));
+  const artifactLineIndex = lines.findIndex((line) => line.includes('__octotaskArtifact__'));
 
   // Return original content if artifact line not found
   if (artifactLineIndex === -1) {

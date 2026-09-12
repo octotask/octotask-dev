@@ -1,9 +1,11 @@
-import { LLMManager } from '~/lib/modules/llm/manager';
+import { DEFAULT_PROVIDER, PROVIDER_LIST } from '~/lib/modules/llm/client-providers';
 import type { Template } from '~/types/template';
+
+export { DEFAULT_PROVIDER, PROVIDER_LIST };
 
 export const WORK_DIR_NAME = 'project';
 export const WORK_DIR = `/home/${WORK_DIR_NAME}`;
-export const MODIFICATIONS_TAG_NAME = 'octo_file_modifications';
+export const MODIFICATIONS_TAG_NAME = 'octotask_file_modifications';
 export const MODEL_REGEX = /^\[Model: (.*?)\]\n\n/;
 export const PROVIDER_REGEX = /\[Provider: (.*?)\]\n\n/;
 export const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
@@ -16,18 +18,30 @@ export const TOOL_NO_EXECUTE_FUNCTION = 'Error: No execute function found on too
 export const TOOL_EXECUTION_DENIED = 'Error: User denied access to tool execution';
 export const TOOL_EXECUTION_ERROR = 'Error: An error occured while calling tool';
 
-const llmManager = LLMManager.getInstance(import.meta.env);
-
-export const PROVIDER_LIST = llmManager.getAllProviders();
-export const DEFAULT_PROVIDER = llmManager.getDefaultProvider();
-
-export const providerBaseUrlEnvKeys: Record<string, { baseUrlKey?: string; apiTokenKey?: string }> = {};
-PROVIDER_LIST.forEach((provider) => {
-  providerBaseUrlEnvKeys[provider.name] = {
-    baseUrlKey: provider.config.baseUrlKey,
-    apiTokenKey: provider.config.apiTokenKey,
-  };
-});
+export const providerBaseUrlEnvKeys: Record<string, { baseUrlKey?: string; apiTokenKey?: string }> = {
+  Anthropic: { apiTokenKey: 'ANTHROPIC_API_KEY' },
+  Cerebras: { apiTokenKey: 'CEREBRAS_API_KEY' },
+  Cohere: { apiTokenKey: 'COHERE_API_KEY' },
+  Deepseek: { apiTokenKey: 'DEEPSEEK_API_KEY' },
+  Fireworks: { apiTokenKey: 'FIREWORKS_API_KEY' },
+  Google: { apiTokenKey: 'GOOGLE_GENERATIVE_AI_API_KEY' },
+  Groq: { apiTokenKey: 'GROQ_API_KEY' },
+  HuggingFace: { apiTokenKey: 'HuggingFace_API_KEY' },
+  Hyperbolic: { apiTokenKey: 'HYPERBOLIC_API_KEY' },
+  LMStudio: { baseUrlKey: 'LMSTUDIO_API_BASE_URL' },
+  Mistral: { apiTokenKey: 'MISTRAL_API_KEY' },
+  Moonshot: { apiTokenKey: 'MOONSHOT_API_KEY' },
+  Ollama: { baseUrlKey: 'OLLAMA_API_BASE_URL' },
+  OpenAI: { apiTokenKey: 'OPENAI_API_KEY' },
+  OpenAILike: { baseUrlKey: 'OPENAI_LIKE_API_BASE_URL', apiTokenKey: 'OPENAI_LIKE_API_KEY' },
+  OpenRouter: { apiTokenKey: 'OPEN_ROUTER_API_KEY' },
+  Perplexity: { apiTokenKey: 'PERPLEXITY_API_KEY' },
+  Together: { baseUrlKey: 'TOGETHER_API_BASE_URL', apiTokenKey: 'TOGETHER_API_KEY' },
+  xAI: { apiTokenKey: 'XAI_API_KEY' },
+  AmazonBedrock: { apiTokenKey: 'AWS_BEDROCK_CONFIG' },
+  Github: { apiTokenKey: 'GITHUB_API_KEY' },
+  'Z.ai': { baseUrlKey: 'ZAI_BASE_URL', apiTokenKey: 'ZAI_API_KEY' },
+};
 
 // starter Templates
 
@@ -36,25 +50,25 @@ export const STARTER_TEMPLATES: Template[] = [
     name: 'Expo App',
     label: 'Expo App',
     description: 'Expo starter template for building cross-platform mobile apps',
-    githubRepo: 'xKevIsDev/octo-expo-template',
+    githubRepo: 'xKevIsDev/octotask-expo-template',
     tags: ['mobile', 'expo', 'mobile-app', 'android', 'iphone'],
-    icon: 'i-octo:expo',
+    icon: 'i-octotask:expo',
   },
   {
     name: 'Basic Astro',
     label: 'Astro Basic',
     description: 'Lightweight Astro starter template for building fast static websites',
-    githubRepo: 'xKevIsDev/octo-astro-basic-template',
+    githubRepo: 'xKevIsDev/octotask-astro-basic-template',
     tags: ['astro', 'blog', 'performance'],
-    icon: 'i-octo:astro',
+    icon: 'i-octotask:astro',
   },
   {
     name: 'NextJS Shadcn',
     label: 'Next.js with shadcn/ui',
     description: 'Next.js starter fullstack template integrated with shadcn/ui components and styling system',
-    githubRepo: 'xKevIsDev/octo-nextjs-shadcn-template',
+    githubRepo: 'xKevIsDev/octotask-nextjs-shadcn-template',
     tags: ['nextjs', 'react', 'typescript', 'shadcn', 'tailwind'],
-    icon: 'i-octo:nextjs',
+    icon: 'i-octotask:nextjs',
   },
   {
     name: 'Vite Shadcn',
@@ -62,39 +76,39 @@ export const STARTER_TEMPLATES: Template[] = [
     description: 'Vite starter fullstack template integrated with shadcn/ui components and styling system',
     githubRepo: 'xKevIsDev/vite-shadcn',
     tags: ['vite', 'react', 'typescript', 'shadcn', 'tailwind'],
-    icon: 'i-octo:shadcn',
+    icon: 'i-octotask:shadcn',
   },
   {
     name: 'Qwik Typescript',
     label: 'Qwik TypeScript',
     description: 'Qwik framework starter with TypeScript for building resumable applications',
-    githubRepo: 'xKevIsDev/octo-qwik-ts-template',
+    githubRepo: 'xKevIsDev/octotask-qwik-ts-template',
     tags: ['qwik', 'typescript', 'performance', 'resumable'],
-    icon: 'i-octo:qwik',
+    icon: 'i-octotask:qwik',
   },
   {
     name: 'Remix Typescript',
     label: 'Remix TypeScript',
     description: 'Remix framework starter with TypeScript for full-stack web applications',
-    githubRepo: 'xKevIsDev/octo-remix-ts-template',
+    githubRepo: 'xKevIsDev/octotask-remix-ts-template',
     tags: ['remix', 'typescript', 'fullstack', 'react'],
-    icon: 'i-octo:remix',
+    icon: 'i-octotask:remix',
   },
   {
     name: 'Slidev',
     label: 'Slidev Presentation',
     description: 'Slidev starter template for creating developer-friendly presentations using Markdown',
-    githubRepo: 'xKevIsDev/octo-slidev-template',
+    githubRepo: 'xKevIsDev/octotask-slidev-template',
     tags: ['slidev', 'presentation', 'markdown'],
-    icon: 'i-octo:slidev',
+    icon: 'i-octotask:slidev',
   },
   {
     name: 'Sveltekit',
     label: 'SvelteKit',
     description: 'SvelteKit starter template for building fast, efficient web applications',
-    githubRepo: 'octo-sveltekit-template',
+    githubRepo: 'octotask-sveltekit-template',
     tags: ['svelte', 'sveltekit', 'typescript'],
-    icon: 'i-octo:svelte',
+    icon: 'i-octotask:svelte',
   },
   {
     name: 'Vanilla Vite',
@@ -102,39 +116,39 @@ export const STARTER_TEMPLATES: Template[] = [
     description: 'Minimal Vite starter template for vanilla JavaScript projects',
     githubRepo: 'xKevIsDev/vanilla-vite-template',
     tags: ['vite', 'vanilla-js', 'minimal'],
-    icon: 'i-octo:vite',
+    icon: 'i-octotask:vite',
   },
   {
     name: 'Vite React',
     label: 'React + Vite + typescript',
     description: 'React starter template powered by Vite for fast development experience',
-    githubRepo: 'xKevIsDev/octo-vite-react-ts-template',
+    githubRepo: 'xKevIsDev/octotask-vite-react-ts-template',
     tags: ['react', 'vite', 'frontend', 'website', 'app'],
-    icon: 'i-octo:react',
+    icon: 'i-octotask:react',
   },
   {
     name: 'Vite Typescript',
     label: 'Vite + TypeScript',
     description: 'Vite starter template with TypeScript configuration for type-safe development',
-    githubRepo: 'xKevIsDev/octo-vite-ts-template',
+    githubRepo: 'xKevIsDev/octotask-vite-ts-template',
     tags: ['vite', 'typescript', 'minimal'],
-    icon: 'i-octo:typescript',
+    icon: 'i-octotask:typescript',
   },
   {
     name: 'Vue',
     label: 'Vue.js',
     description: 'Vue.js starter template with modern tooling and best practices',
-    githubRepo: 'xKevIsDev/octo-vue-template',
+    githubRepo: 'xKevIsDev/octotask-vue-template',
     tags: ['vue', 'typescript', 'frontend'],
-    icon: 'i-octo:vue',
+    icon: 'i-octotask:vue',
   },
   {
     name: 'Angular',
     label: 'Angular Starter',
     description: 'A modern Angular starter template with TypeScript support and best practices configuration',
-    githubRepo: 'xKevIsDev/octo-angular-template',
+    githubRepo: 'xKevIsDev/octotask-angular-template',
     tags: ['angular', 'typescript', 'frontend', 'spa'],
-    icon: 'i-octo:angular',
+    icon: 'i-octotask:angular',
   },
   {
     name: 'SolidJS',
@@ -142,6 +156,6 @@ export const STARTER_TEMPLATES: Template[] = [
     description: 'Lightweight SolidJS starter template for building fast static websites',
     githubRepo: 'xKevIsDev/solidjs-ts-tw',
     tags: ['solidjs'],
-    icon: 'i-octo:solidjs',
+    icon: 'i-octotask:solidjs',
   },
 ];

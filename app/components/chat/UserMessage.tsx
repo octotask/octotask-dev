@@ -18,8 +18,7 @@ import type {
 interface UserMessageProps {
   content: string | Array<{ type: string; text?: string; image?: string }>;
   parts:
-    | (TextUIPart | ReasoningUIPart | ToolInvocationUIPart | SourceUIPart | FileUIPart | StepStartUIPart)[]
-    | undefined;
+    (TextUIPart | ReasoningUIPart | ToolInvocationUIPart | SourceUIPart | FileUIPart | StepStartUIPart)[] | undefined;
 }
 
 export function UserMessage({ content, parts }: UserMessageProps) {
@@ -47,7 +46,7 @@ export function UserMessage({ content, parts }: UserMessageProps) {
                 loading="eager"
                 decoding="sync"
               />
-              <span className="text-octo-elements-textPrimary text-sm">
+              <span className="text-octotask-elements-textPrimary text-sm">
                 {profile?.username ? profile.username : ''}
               </span>
             </div>
@@ -77,7 +76,7 @@ export function UserMessage({ content, parts }: UserMessageProps) {
     <div className="flex flex-col bg-accent-500/10 backdrop-blur-sm px-5 p-3.5 w-auto rounded-lg ml-auto">
       <div className="flex gap-3.5 mb-4">
         {images.map((item, index) => (
-          <div className="relative flex rounded-lg border border-octo-elements-borderColor overflow-hidden">
+          <div className="relative flex rounded-lg border border-octotask-elements-borderColor overflow-hidden">
             <div className="h-16 w-16 bg-transparent outline-none">
               <img
                 key={index}
@@ -96,6 +95,6 @@ export function UserMessage({ content, parts }: UserMessageProps) {
 }
 
 function stripMetadata(content: string) {
-  const artifactRegex = /<octoArtifact\s+[^>]*>[\s\S]*?<\/octoArtifact>/gm;
+  const artifactRegex = /<octotaskArtifact\s+[^>]*>[\s\S]*?<\/octotaskArtifact>/gm;
   return content.replace(MODEL_REGEX, '').replace(PROVIDER_REGEX, '').replace(artifactRegex, '');
 }

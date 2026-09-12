@@ -2,8 +2,13 @@ import { generateText, type CoreTool, type GenerateTextResult, type Message } fr
 import ignore from 'ignore';
 import type { IProviderSetting } from '~/types/model';
 import { IGNORE_PATTERNS, type FileMap } from './constants';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER, PROVIDER_LIST } from '~/utils/constants';
-import { createFilesContext, extractCurrentContext, extractPropertiesFromMessage, simplifyOctoActions } from './utils';
+import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
+import {
+  createFilesContext,
+  extractCurrentContext,
+  extractPropertiesFromMessage,
+  simplifyOctotaskActions,
+} from './utils';
 import { createScopedLogger } from '~/utils/logger';
 import { LLMManager } from '~/lib/modules/llm/manager';
 
@@ -36,9 +41,9 @@ export async function selectContext(props: {
     } else if (message.role == 'assistant') {
       let content = message.content;
 
-      content = simplifyOctoActions(content);
+      content = simplifyOctotaskActions(content);
 
-      content = content.replace(/<div class=\\"__octoThought__\\">.*?<\/div>/s, '');
+      content = content.replace(/<div class=\\"__octotaskThought__\\">.*?<\/div>/s, '');
       content = content.replace(/<think>.*?<\/think>/s, '');
 
       return { ...message, content };
@@ -47,7 +52,8 @@ export async function selectContext(props: {
     return message;
   });
 
-  const provider = PROVIDER_LIST.find((p) => p.name === currentProvider) || DEFAULT_PROVIDER;
+  const llmManager = LLMManager.getInstance(serverEnv as any);
+  const provider = llmManager.getProvider(currentProvider) ?? llmManager.getDefaultProvider();
   const staticModels = LLMManager.getInstance().getStaticModelListFromProvider(provider);
   let modelDetails = staticModels.find((m) => m.name === currentModel);
 
@@ -168,7 +174,7 @@ export async function selectContext(props: {
         * if the buffer is full, you need to exclude files that is not needed and include files that is relevent.
 
         `,
-    model: provider.getModelInstance({
+    model: await provider.getModelInstance({
       model: currentModel,
       serverEnv,
       apiKeys,
@@ -225,7 +231,7 @@ export async function selectContext(props: {
   logger.info(`Total files: ${totalFiles}`);
 
   if (totalFiles == 0) {
-    throw new Error(`OctoTask failed to select files`);
+    throw new Error(`Octotask failed to select files`);
   }
 
   return filteredFiles;

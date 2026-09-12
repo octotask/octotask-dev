@@ -130,34 +130,34 @@ export function useChatHistory() {
                   role: 'assistant',
 
                   // Combine followup message and the artifact with files and command actions
-                  content: `OctoTask restored your chat from a snapshot. You can revert this message to load the full chat history.
-                  <octoArtifact id="restored-project-setup" title="Restored Project & Setup" type="bundled">
+                  content: `Octotask Restored your chat from a snapshot. You can revert this message to load the full chat history.
+                  <octotaskArtifact id="restored-project-setup" title="Restored Project & Setup" type="bundled">
                   ${Object.entries(snapshot?.files || {})
-                      .map(([key, value]) => {
-                        if (value?.type === 'file') {
-                          return `
-                      <octoAction type="file" filePath="${key}">
+                    .map(([key, value]) => {
+                      if (value?.type === 'file') {
+                        return `
+                      <octotaskAction type="file" filePath="${key}">
 ${value.content}
-                      </octoAction>
+                      </octotaskAction>
                       `;
-                        } else {
-                          return ``;
-                        }
-                      })
-                      .join('\n')}
+                      } else {
+                        return ``;
+                      }
+                    })
+                    .join('\n')}
                   ${commandActionsString} 
-                  </octoArtifact>
+                  </octotaskArtifact>
                   `, // Added commandActionsString, followupMessage, updated id and title
                   annotations: [
                     'no-store',
                     ...(summary
                       ? [
-                        {
-                          chatId: storedMessages.messages[snapshotIndex].id,
-                          type: 'chatSummary',
-                          summary,
-                        } satisfies ContextAnnotation,
-                      ]
+                          {
+                            chatId: storedMessages.messages[snapshotIndex].id,
+                            type: 'chatSummary',
+                            summary,
+                          } satisfies ContextAnnotation,
+                        ]
                       : []),
                   ],
                 },

@@ -1,5 +1,6 @@
 import { type Message } from 'ai';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER, MODEL_REGEX, PROVIDER_REGEX } from '~/utils/constants';
+import { DEFAULT_MODEL, MODEL_REGEX, PROVIDER_REGEX } from '~/utils/constants';
+import { DEFAULT_PROVIDER_NAME } from '~/lib/modules/llm/client-providers';
 import { IGNORE_PATTERNS, type FileMap } from './constants';
 import ignore from 'ignore';
 import type { ContextAnnotation } from '~/types/context';
@@ -26,7 +27,7 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
    * Extract provider
    * const providerMatch = message.content.match(PROVIDER_REGEX);
    */
-  const provider = providerMatch ? providerMatch[1] : DEFAULT_PROVIDER.name;
+  const provider = providerMatch ? providerMatch[1] : DEFAULT_PROVIDER_NAME;
 
   const cleanedContent = Array.isArray(message.content)
     ? message.content.map((item) => {
@@ -44,9 +45,9 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
   return { model, provider, content: cleanedContent };
 }
 
-export function simplifyOctoActions(input: string): string {
-  // Using regex to match octoAction tags that have type="file"
-  const regex = /(<octoAction[^>]*type="file"[^>]*>)([\s\S]*?)(<\/octoAction>)/g;
+export function simplifyOctotaskActions(input: string): string {
+  // Using regex to match octotaskAction tags that have type="file"
+  const regex = /(<octotaskAction[^>]*type="file"[^>]*>)([\s\S]*?)(<\/octotaskAction>)/g;
 
   // Replace each matching occurrence
   return input.replace(regex, (_0, openingTag, _2, closingTag) => {
@@ -82,10 +83,10 @@ export function createFilesContext(files: FileMap, useRelativePath?: boolean) {
         filePath = path.replace('/home/project/', '');
       }
 
-      return `<octoAction type="file" filePath="${filePath}">${codeWithLinesNumbers}</octoAction>`;
+      return `<octotaskAction type="file" filePath="${filePath}">${codeWithLinesNumbers}</octotaskAction>`;
     });
 
-  return `<octoArtifact id="code-content" title="Code Content" >\n${fileContexts.join('\n')}\n</octoArtifact>`;
+  return `<octotaskArtifact id="code-content" title="Code Content" >\n${fileContexts.join('\n')}\n</octotaskArtifact>`;
 }
 
 export function extractCurrentContext(messages: Message[]) {

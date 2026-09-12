@@ -1,7 +1,5 @@
 import type { PathWatcherEvent, WebContainer } from '@webcontainer/api';
-import { getEncoding } from 'istextorbinary';
 import { map, type MapStore } from 'nanostores';
-import { Buffer } from 'node:buffer';
 import { path } from '~/utils/path';
 import { bufferWatchEvents } from '~/utils/buffer';
 import { WORK_DIR } from '~/utils/constants';
@@ -76,10 +74,14 @@ export class FilesStore {
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
 
+    if (typeof window === 'undefined' || import.meta.env.SSR) {
+      return;
+    }
+
     // Load deleted paths from localStorage if available
     try {
       if (typeof localStorage !== 'undefined') {
-        const deletedPathsJson = localStorage.getItem('octo-deleted-paths');
+        const deletedPathsJson = localStorage.getItem('octotask-deleted-paths');
 
         if (deletedPathsJson) {
           const deletedPaths = JSON.parse(deletedPathsJson);
@@ -786,9 +788,9 @@ export class FilesStore {
       const isBinary = content instanceof Uint8Array;
 
       if (isBinary) {
-        await webcontainer.fs.writeFile(relativePath, Buffer.from(content));
+        await webcontainer.fs.writeFile(relativePath, content);
 
-        const base64Content = Buffer.from(content).toString('base64');
+        const base64Content = bytesToBase64(content);
         this.files.setKey(filePath, {
           type: 'file',
           content: base64Content,
@@ -924,7 +926,7 @@ export class FilesStore {
   #persistDeletedPaths() {
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('octo-deleted-paths', JSON.stringify([...this.#deletedPaths]));
+        localStorage.setItem('octotask-deleted-paths', JSON.stringify([...this.#deletedPaths]));
       }
     } catch (error) {
       logger.error('Failed to persist deleted paths to localStorage', error);
@@ -933,19 +935,39 @@ export class FilesStore {
 }
 
 function isBinaryFile(buffer: Uint8Array | undefined) {
-  if (buffer === undefined) {
+  if (!buffer?.byteLength) {
     return false;
   }
 
-  return getEncoding(convertToBuffer(buffer), { chunkLength: 100 }) === 'binary';
+  const sample = buffer.byteLength > 4096 ? buffer.subarray(0, 4096) : buffer;
+  let suspiciousBytes = 0;
+
+  for (const byte of sample) {
+    if (byte === 0 || byte < 9 || (byte > 13 && byte < 32)) {
+      suspiciousBytes++;
+    }
+  }
+
+  if (suspiciousBytes / sample.byteLength > 0.05) {
+    return true;
+  }
+
+  try {
+    utf8TextDecoder.decode(sample);
+    return false;
+  } catch {
+    return true;
+  }
 }
 
-/**
- * Converts a `Uint8Array` into a Node.js `Buffer` by copying the prototype.
- * The goal is to  avoid expensive copies. It does create a new typed array
- * but that's generally cheap as long as it uses the same underlying
- * array buffer.
- */
-function convertToBuffer(view: Uint8Array): Buffer {
-  return Buffer.from(view.buffer, view.byteOffset, view.byteLength);
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = '';
+  const chunkSize = 8192;
+
+  for (let index = 0; index < bytes.byteLength; index += chunkSize) {
+    const chunk = bytes.subarray(index, index + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
 }

@@ -19,6 +19,7 @@ import { ColorSchemeDialog } from '~/components/ui/ColorSchemeDialog';
 import type { DesignScheme } from '~/types/design-scheme';
 import type { ElementInfo } from '~/components/workbench/Inspector';
 import { McpTools } from './MCPTools';
+import { WebSearch } from './WebSearch.client';
 
 interface ChatBoxProps {
   isModelSettingsCollapsed: boolean;
@@ -55,6 +56,7 @@ interface ChatBoxProps {
   handleStop?: (() => void) | undefined;
   enhancingPrompt?: boolean | undefined;
   enhancePrompt?: (() => void) | undefined;
+  onWebSearchResult?: (result: string) => void;
   chatMode?: 'discuss' | 'build';
   setChatMode?: (mode: 'discuss' | 'build') => void;
   designScheme?: DesignScheme;
@@ -67,7 +69,7 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
   return (
     <div
       className={classNames(
-        'relative bg-octo-elements-background-depth-2 backdrop-blur p-3 rounded-lg border border-octo-elements-borderColor relative w-full max-w-chat mx-auto z-prompt',
+        'relative bg-octotask-elements-background-depth-2 backdrop-blur p-3 rounded-lg border border-octotask-elements-borderColor relative w-full max-w-chat mx-auto z-prompt',
 
         /*
          * {
@@ -151,7 +153,7 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
         )}
       </ClientOnly>
       {props.selectedElement && (
-        <div className="flex mx-1.5 gap-2 items-center justify-between rounded-lg rounded-b-none border border-b-none border-octo-elements-borderColor text-octo-elements-textPrimary flex py-1 px-2.5 font-medium text-xs">
+        <div className="flex mx-1.5 gap-2 items-center justify-between rounded-lg rounded-b-none border border-b-none border-octotask-elements-borderColor text-octotask-elements-textPrimary flex py-1 px-2.5 font-medium text-xs">
           <div className="flex gap-2 items-center lowercase">
             <code className="bg-accent-500 rounded-4px px-1.5 py-1 mr-0.5 text-white">
               {props?.selectedElement?.tagName}
@@ -167,14 +169,16 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
         </div>
       )}
       <div
-        className={classNames('relative shadow-xs border border-octo-elements-borderColor backdrop-blur rounded-lg')}
+        className={classNames(
+          'relative shadow-xs border border-octotask-elements-borderColor backdrop-blur rounded-lg',
+        )}
       >
         <textarea
           ref={props.textareaRef}
           className={classNames(
-            'w-full pl-4 pt-4 pr-16 outline-none resize-none text-octo-elements-textPrimary placeholder-octo-elements-textTertiary bg-transparent text-sm',
+            'w-full pl-4 pt-4 pr-16 outline-none resize-none text-octotask-elements-textPrimary placeholder-octotask-elements-textTertiary bg-transparent text-sm',
             'transition-all duration-200',
-            'hover:border-octo-elements-focus',
+            'hover:border-octotask-elements-focus',
           )}
           onDragEnter={(e) => {
             e.preventDefault();
@@ -186,11 +190,11 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
           }}
           onDragLeave={(e) => {
             e.preventDefault();
-            e.currentTarget.style.border = '1px solid var(--octo-elements-borderColor)';
+            e.currentTarget.style.border = '1px solid var(--octotask-elements-borderColor)';
           }}
           onDrop={(e) => {
             e.preventDefault();
-            e.currentTarget.style.border = '1px solid var(--octo-elements-borderColor)';
+            e.currentTarget.style.border = '1px solid var(--octotask-elements-borderColor)';
 
             const files = Array.from(e.dataTransfer.files);
             files.forEach((file) => {
@@ -236,7 +240,9 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
             minHeight: props.TEXTAREA_MIN_HEIGHT,
             maxHeight: props.TEXTAREA_MAX_HEIGHT,
           }}
-          placeholder={props.chatMode === 'build' ? 'How can OctoTask help you today?' : 'What would you like to discuss?'}
+          placeholder={
+            props.chatMode === 'build' ? 'How can Octotask help you today?' : 'What would you like to discuss?'
+          }
           translate="no"
         />
         <ClientOnly>
@@ -265,6 +271,7 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
             <IconButton title="Upload file" className="transition-all" onClick={() => props.handleFileUpload()}>
               <div className="i-ph:paperclip text-xl"></div>
             </IconButton>
+            <WebSearch onSearchResult={(result) => props.onWebSearchResult?.(result)} disabled={props.isStreaming} />
             <IconButton
               title="Enhance prompt"
               disabled={props.input.length === 0 || props.enhancingPrompt}
@@ -275,9 +282,9 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
               }}
             >
               {props.enhancingPrompt ? (
-                <div className="i-svg-spinners:90-ring-with-bg text-octo-elements-loader-progress text-xl animate-spin"></div>
+                <div className="i-svg-spinners:90-ring-with-bg text-octotask-elements-loader-progress text-xl animate-spin"></div>
               ) : (
-                <div className="i-octo:stars text-xl"></div>
+                <div className="i-octotask:stars text-xl"></div>
               )}
             </IconButton>
 
@@ -293,8 +300,8 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
                 className={classNames(
                   'transition-all flex items-center gap-1 px-1.5',
                   props.chatMode === 'discuss'
-                    ? '!bg-octo-elements-item-backgroundAccent !text-octo-elements-item-contentAccent'
-                    : 'bg-octo-elements-item-backgroundDefault text-octo-elements-item-contentDefault',
+                    ? '!bg-octotask-elements-item-backgroundAccent !text-octotask-elements-item-contentAccent'
+                    : 'bg-octotask-elements-item-backgroundDefault text-octotask-elements-item-contentDefault',
                 )}
                 onClick={() => {
                   props.setChatMode?.(props.chatMode === 'discuss' ? 'build' : 'discuss');
@@ -307,9 +314,9 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
             <IconButton
               title="Model Settings"
               className={classNames('transition-all flex items-center gap-1', {
-                'bg-octo-elements-item-backgroundAccent text-octo-elements-item-contentAccent':
+                'bg-octotask-elements-item-backgroundAccent text-octotask-elements-item-contentAccent':
                   props.isModelSettingsCollapsed,
-                'bg-octo-elements-item-backgroundDefault text-octo-elements-item-contentDefault':
+                'bg-octotask-elements-item-backgroundDefault text-octotask-elements-item-contentDefault':
                   !props.isModelSettingsCollapsed,
               })}
               onClick={() => props.setIsModelSettingsCollapsed(!props.isModelSettingsCollapsed)}
@@ -320,9 +327,9 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
             </IconButton>
           </div>
           {props.input.length > 3 ? (
-            <div className="text-xs text-octo-elements-textTertiary">
-              Use <kbd className="kdb px-1.5 py-0.5 rounded bg-octo-elements-background-depth-2">Shift</kbd> +{' '}
-              <kbd className="kdb px-1.5 py-0.5 rounded bg-octo-elements-background-depth-2">Return</kbd> a new line
+            <div className="text-xs text-octotask-elements-textTertiary">
+              Use <kbd className="kdb px-1.5 py-0.5 rounded bg-octotask-elements-background-depth-2">Shift</kbd> +{' '}
+              <kbd className="kdb px-1.5 py-0.5 rounded bg-octotask-elements-background-depth-2">Return</kbd> a new line
             </div>
           ) : null}
           <SupabaseConnection />

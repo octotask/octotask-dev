@@ -7,7 +7,7 @@ import { BaseChat } from '~/components/chat/BaseChat';
 import { Chat } from '~/components/chat/Chat.client';
 import { useGit } from '~/lib/hooks/useGit';
 import { useChatHistory } from '~/lib/persistence';
-import { createCommandsMessage, detectProjectCommands, escapeOctoTags } from '~/utils/projectCommands';
+import { createCommandsMessage, detectProjectCommands, escapeOctotaskTags } from '~/utils/projectCommands';
 import { LoadingOverlay } from '~/components/ui/LoadingOverlay';
 import { toast } from 'react-toastify';
 
@@ -75,16 +75,16 @@ export function GitUrlImport() {
           const filesMessage: Message = {
             role: 'assistant',
             content: `Cloning the repo ${repoUrl} into ${workdir}
-<octoArtifact id="imported-files" title="Git Cloned Files"  type="bundled">
+<octotaskArtifact id="imported-files" title="Git Cloned Files"  type="bundled">
 ${fileContents
   .map(
     (file) =>
-      `<octoAction type="file" filePath="${file.path}">
-${escapeOctoTags(file.content)}
-</octoAction>`,
+      `<octotaskAction type="file" filePath="${file.path}">
+${escapeOctotaskTags(file.content)}
+</octotaskAction>`,
   )
   .join('\n')}
-</octoArtifact>`,
+</octotaskArtifact>`,
             id: generateId(),
             createdAt: new Date(),
           };

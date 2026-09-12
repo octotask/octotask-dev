@@ -3,10 +3,8 @@
  * Preventing TS checks with files presented in the video for a better presentation.
  */
 import type { JSONValue, Message } from 'ai';
-import React, { type RefCallback, useEffect, useState } from 'react';
+import React, { lazy, Suspense, type RefCallback, useEffect, useState } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
-import { Menu } from '~/components/sidebar/Menu.client';
-import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { PROVIDER_LIST } from '~/utils/constants';
 import { Messages } from './Messages.client';
@@ -35,6 +33,44 @@ import type { ElementInfo } from '~/components/workbench/Inspector';
 import LlmErrorAlert from './LLMApiAlert';
 
 const TEXTAREA_MIN_HEIGHT = 76;
+const MODEL_LIST_CACHE_KEY = 'octotask-model-list';
+const MODEL_LIST_CACHE_TTL = 60 * 60 * 1000;
+
+function getCachedModelList(): ModelInfo[] | undefined {
+  if (typeof sessionStorage === 'undefined') {
+    return undefined;
+  }
+
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(MODEL_LIST_CACHE_KEY) || 'null') as {
+      models?: ModelInfo[];
+      savedAt?: number;
+    } | null;
+
+    if (cached?.models && cached.savedAt && Date.now() - cached.savedAt < MODEL_LIST_CACHE_TTL) {
+      return cached.models;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function cacheModelList(models: ModelInfo[]) {
+  if (typeof sessionStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    sessionStorage.setItem(MODEL_LIST_CACHE_KEY, JSON.stringify({ models, savedAt: Date.now() }));
+  } catch {
+    return;
+  }
+}
+
+const Menu = lazy(async () => ({ default: (await import('~/components/sidebar/Menu.client')).Menu }));
+const Workbench = lazy(async () => ({ default: (await import('~/components/workbench/Workbench.client')).Workbench }));
 
 interface BaseChatProps {
   textareaRef?: React.RefObject<HTMLTextAreaElement> | undefined;
@@ -81,6 +117,7 @@ interface BaseChatProps {
   selectedElement?: ElementInfo | null;
   setSelectedElement?: (element: ElementInfo | null) => void;
   addToolResult?: ({ toolCallId, result }: { toolCallId: string; result: any }) => void;
+  onWebSearchResult?: (result: string) => void;
 }
 
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
@@ -130,12 +167,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       addToolResult = () => {
         throw new Error('addToolResult not implemented');
       },
+      onWebSearchResult,
     },
     ref,
   ) => {
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
     const [apiKeys, setApiKeys] = useState<Record<string, string>>(getApiKeysFromCookies());
-    const [modelList, setModelList] = useState<ModelInfo[]>([]);
+    const [modelList, setModelList] = useState<ModelInfo[]>(() => getCachedModelList() ?? []);
     const [isModelSettingsCollapsed, setIsModelSettingsCollapsed] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
@@ -200,32 +238,57 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     }, []);
 
     useEffect(() => {
-      if (typeof window !== 'undefined') {
-        let parsedApiKeys: Record<string, string> | undefined = {};
+      let cancelled = false;
 
-        try {
-          parsedApiKeys = getApiKeysFromCookies();
-          setApiKeys(parsedApiKeys);
-        } catch (error) {
-          console.error('Error loading API keys from cookies:', error);
-          Cookies.remove('apiKeys');
+      const loadModelList = async () => {
+        const cachedModels = getCachedModelList();
+
+        if (cachedModels) {
+          setModelList(cachedModels);
+          setIsModelLoading(undefined);
+
+          return;
         }
 
-        setIsModelLoading('all');
-        fetch('/api/models')
-          .then((response) => response.json())
-          .then((data) => {
-            const typedData = data as { modelList: ModelInfo[] };
-            setModelList(typedData.modelList);
-          })
-          .catch((error) => {
+        try {
+          const response = await fetch('/api/models?static=true');
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = (await response.json()) as { modelList: ModelInfo[] };
+
+          if (!cancelled) {
+            setModelList(data.modelList);
+            cacheModelList(data.modelList);
+          }
+        } catch (error) {
+          if (!cancelled) {
             console.error('Error fetching model list:', error);
-          })
-          .finally(() => {
+          }
+        } finally {
+          if (!cancelled) {
             setIsModelLoading(undefined);
-          });
+          }
+        }
+      };
+
+      loadModelList();
+
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+
+    useEffect(() => {
+      try {
+        setApiKeys(getApiKeysFromCookies());
+      } catch (error) {
+        console.error('Error loading API keys from cookies:', error);
+        Cookies.remove('apiKeys');
       }
-    }, [providerList, provider]);
+    }, []);
 
     const onApiKeysChange = async (providerName: string, apiKey: string) => {
       const newApiKeys = { ...apiKeys, [providerName]: apiKey };
@@ -244,11 +307,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         console.error('Error loading dynamic models for:', providerName, error);
       }
 
-      // Only update models for the specific provider
-      setModelList((prevModels) => {
-        const otherModels = prevModels.filter((model) => model.provider !== providerName);
-        return [...otherModels, ...providerModels];
-      });
+      const nextModels = [...modelList.filter((model) => model.provider !== providerName), ...providerModels];
+      setModelList(nextModels);
+      cacheModelList(nextModels);
       setIsModelLoading(undefined);
     };
 
@@ -345,15 +406,21 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         className={classNames(styles.BaseChat, 'relative flex h-full w-full overflow-hidden')}
         data-chat-visible={showChat}
       >
-        <ClientOnly>{() => <Menu />}</ClientOnly>
+        <ClientOnly>
+          {() => (
+            <Suspense fallback={null}>
+              <Menu />
+            </Suspense>
+          )}
+        </ClientOnly>
         <div className="flex flex-col lg:flex-row overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow lg:min-w-[var(--chat-min-width)] h-full')}>
             {!chatStarted && (
               <div id="intro" className="mt-[16vh] max-w-2xl mx-auto text-center px-4 lg:px-0">
-                <h1 className="text-3xl lg:text-6xl font-bold text-octo-elements-textPrimary mb-4 animate-fade-in">
+                <h1 className="text-3xl lg:text-6xl font-bold text-octotask-elements-textPrimary mb-4 animate-fade-in">
                   Where ideas begin
                 </h1>
-                <p className="text-md lg:text-xl mb-8 text-octo-elements-textSecondary animate-fade-in animation-delay-200">
+                <p className="text-md lg:text-xl mb-8 text-octotask-elements-textSecondary animate-fade-in animation-delay-200">
                   Bring ideas to life in seconds or get help on existing projects.
                 </p>
               </div>
@@ -465,6 +532,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   setDesignScheme={setDesignScheme}
                   selectedElement={selectedElement}
                   setSelectedElement={setSelectedElement}
+                  onWebSearchResult={onWebSearchResult}
                 />
               </div>
             </StickToBottom>
@@ -491,7 +559,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           </div>
           <ClientOnly>
             {() => (
-              <Workbench chatStarted={chatStarted} isStreaming={isStreaming} setSelectedElement={setSelectedElement} />
+              <Suspense fallback={null}>
+                <Workbench
+                  chatStarted={chatStarted}
+                  isStreaming={isStreaming}
+                  setSelectedElement={setSelectedElement}
+                />
+              </Suspense>
             )}
           </ClientOnly>
         </div>
@@ -508,9 +582,9 @@ function ScrollToBottom() {
   return (
     !isAtBottom && (
       <>
-        <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-t from-octo-elements-background-depth-1 to-transparent h-20 z-10" />
+        <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-t from-octotask-elements-background-depth-1 to-transparent h-20 z-10" />
         <button
-          className="sticky z-50 bottom-0 left-0 right-0 text-4xl rounded-lg px-1.5 py-0.5 flex items-center justify-center mx-auto gap-2 bg-octo-elements-background-depth-2 border border-octo-elements-borderColor text-octo-elements-textPrimary text-sm"
+          className="sticky z-50 bottom-0 left-0 right-0 text-4xl rounded-lg px-1.5 py-0.5 flex items-center justify-center mx-auto gap-2 bg-octotask-elements-background-depth-2 border border-octotask-elements-borderColor text-octotask-elements-textPrimary text-sm"
           onClick={() => scrollToBottom()}
         >
           Go to last message

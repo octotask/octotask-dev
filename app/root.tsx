@@ -6,14 +6,10 @@ import { themeStore } from './lib/stores/theme';
 import { stripIndents } from './utils/stripIndent';
 import { createHead } from 'remix-island';
 import { useEffect } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { ClientOnly } from 'remix-utils/client-only';
 import { cssTransition, ToastContainer } from 'react-toastify';
 
 import reactToastifyStyles from 'react-toastify/dist/ReactToastify.css?url';
 import globalStyles from './styles/index.scss?url';
-import xtermStyles from '@xterm/xterm/css/xterm.css?url';
 
 import 'virtual:uno.css';
 
@@ -31,7 +27,6 @@ export const links: LinksFunction = () => [
   { rel: 'stylesheet', href: reactToastifyStyles },
   { rel: 'stylesheet', href: tailwindReset },
   { rel: 'stylesheet', href: globalStyles },
-  { rel: 'stylesheet', href: xtermStyles },
   {
     rel: 'preconnect',
     href: 'https://fonts.googleapis.com',
@@ -51,7 +46,7 @@ const inlineThemeCode = stripIndents`
   setTutorialKitTheme();
 
   function setTutorialKitTheme() {
-    let theme = localStorage.getItem('octo_theme');
+    let theme = localStorage.getItem('octotask_theme');
 
     if (!theme) {
       theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -80,7 +75,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <ClientOnly>{() => <DndProvider backend={HTML5Backend}>{children}</DndProvider>}</ClientOnly>
+      <>{children}</>
       <ToastContainer
         closeButton={({ closeToast }) => {
           return (
@@ -92,10 +87,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         icon={({ type }) => {
           switch (type) {
             case 'success': {
-              return <div className="i-ph:check-bold text-octo-elements-icon-success text-2xl" />;
+              return <div className="i-ph:check-bold text-octotask-elements-icon-success text-2xl" />;
             }
             case 'error': {
-              return <div className="i-ph:warning-circle-bold text-octo-elements-icon-error text-2xl" />;
+              return <div className="i-ph:warning-circle-bold text-octotask-elements-icon-error text-2xl" />;
             }
           }
 

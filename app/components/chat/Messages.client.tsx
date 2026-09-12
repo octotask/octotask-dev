@@ -59,12 +59,12 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
               const isHidden = annotations?.includes('hidden');
 
               if (isHidden) {
-                return <Fragment key={index} />;
+                return <Fragment key={messageId} />;
               }
 
               return (
                 <div
-                  key={index}
+                  key={messageId}
                   className={classNames('flex gap-4 py-3 w-full rounded-lg', {
                     'mt-4': !isFirst,
                   })}
@@ -94,7 +94,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
             })
           : null}
         {isStreaming && (
-          <div className="text-center w-full  text-octo-elements-item-contentAccent i-svg-spinners:3-dots-fade text-4xl mt-4"></div>
+          <div className="text-center w-full  text-octotask-elements-item-contentAccent i-svg-spinners:3-dots-fade text-4xl mt-4"></div>
         )}
       </div>
     );

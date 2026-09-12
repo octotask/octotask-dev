@@ -15,16 +15,16 @@ Available templates:
   <tags>basic, script</tags>
 </template>
 ${templates
-    .map(
-      (template) => `
+  .map(
+    (template) => `
 <template>
   <name>${template.name}</name>
   <description>${template.description}</description>
   ${template.tags ? `<tags>${template.tags.join(', ')}</tags>` : ''}
 </template>
 `,
-    )
-    .join('\n')}
+  )
+  .join('\n')}
 
 Response Format:
 <selection>
@@ -160,11 +160,11 @@ export async function getTemplates(templateName: string, title?: string) {
      */
   }
 
-  // exclude    .octo
-  filteredFiles = filteredFiles.filter((x) => x.path.startsWith('.octo') == false);
+  // exclude    .octotask
+  filteredFiles = filteredFiles.filter((x) => x.path.startsWith('.octotask') == false);
 
-  // check for ignore file in .octo folder
-  const templateIgnoreFile = files.find((x) => x.path.startsWith('.octo') && x.name == 'ignore');
+  // check for ignore file in .octotask folder
+  const templateIgnoreFile = files.find((x) => x.path.startsWith('.octotask') && x.name == 'ignore');
 
   const filesToImport = {
     files: filteredFiles,
@@ -184,20 +184,20 @@ export async function getTemplates(templateName: string, title?: string) {
   }
 
   const assistantMessage = `
-OctoTask is initializing your project with the required files using the ${template.name} template.
-<octoArtifact id="imported-files" title="${title || 'Create initial files'}" type="bundled">
+Octotask is initializing your project with the required files using the ${template.name} template.
+<octotaskArtifact id="imported-files" title="${title || 'Create initial files'}" type="bundled">
 ${filesToImport.files
-      .map(
-        (file) =>
-          `<octoAction type="file" filePath="${file.path}">
+  .map(
+    (file) =>
+      `<octotaskAction type="file" filePath="${file.path}">
 ${file.content}
-</octoAction>`,
-      )
-      .join('\n')}
-</octoArtifact>
+</octotaskAction>`,
+  )
+  .join('\n')}
+</octotaskArtifact>
 `;
   let userMessage = ``;
-  const templatePromptFile = files.filter((x) => x.path.startsWith('.octo')).find((x) => x.name == 'prompt');
+  const templatePromptFile = files.filter((x) => x.path.startsWith('.octotask')).find((x) => x.name == 'prompt');
 
   if (templatePromptFile) {
     userMessage = `

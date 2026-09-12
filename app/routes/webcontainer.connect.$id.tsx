@@ -2,7 +2,7 @@ import { type LoaderFunction } from '@remix-run/cloudflare';
 
 export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url);
-  const editorOrigin = url.searchParams.get('editorOrigin') || 'https://KhulnaSoft.com';
+  const editorOrigin = url.searchParams.get('editorOrigin') || 'https://octotask.com';
   console.log('editorOrigin', editorOrigin);
 
   const htmlContent = `

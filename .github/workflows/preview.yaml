@@ -20,7 +20,7 @@ jobs:
     name: Deploy Preview
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
-    
+
     steps:
       - name: Check if preview deployment is configured
         id: check-secrets
@@ -33,7 +33,7 @@ jobs:
 
       - name: Checkout
         if: steps.check-secrets.outputs.configured == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup and Build
         if: steps.check-secrets.outputs.configured == 'true'
@@ -77,7 +77,7 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const previewComment = comments.find(comment => 
+            const previewComment = comments.find(comment =>
               comment.body.includes('🚀 Preview deployment')
             );
 
@@ -93,7 +93,7 @@ jobs:
               | Latest commit | ${{ github.sha }} |
               | Preview URL | ${deployUrl} |
 
-              Built with ❤️ by [octotask](https://octotask)
+              Built with ❤️ by [octotask](https://ai.khulnasoft.com)
               `;
             } else {
               commentBody = `ℹ️ Preview deployment not configured
@@ -107,7 +107,7 @@ jobs:
               - \`CLOUDFLARE_API_TOKEN\` secret
               - \`CLOUDFLARE_ACCOUNT_ID\` secret
 
-              Built with ❤️ by [octotask](https://octotask)
+              Built with ❤️ by [octotask](https://ai.khulnasoft.com)
               `;
             }
 

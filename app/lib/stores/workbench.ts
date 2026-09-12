@@ -2,7 +2,7 @@ import { atom, map, type MapStore, type ReadableAtom, type WritableAtom } from '
 import type { EditorDocument, ScrollPosition } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/message-parser';
-import { webcontainer } from '~/lib/webcontainer';
+import { getWebContainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
 import { EditorStore } from './editor';
@@ -36,10 +36,10 @@ type Artifacts = MapStore<Record<string, ArtifactState>>;
 export type WorkbenchViewType = 'code' | 'diff' | 'preview';
 
 export class WorkbenchStore {
-  #previewsStore = new PreviewsStore(webcontainer);
-  #filesStore = new FilesStore(webcontainer);
+  #previewsStore = new PreviewsStore(getWebContainer());
+  #filesStore = new FilesStore(getWebContainer());
   #editorStore = new EditorStore(this.#filesStore);
-  #terminalStore = new TerminalStore(webcontainer);
+  #terminalStore = new TerminalStore(getWebContainer());
 
   #reloadedMessages = new Set<string>();
 
@@ -110,8 +110,8 @@ export class WorkbenchStore {
   get showTerminal() {
     return this.#terminalStore.showTerminal;
   }
-  get octoTerminal() {
-    return this.#terminalStore.octoTerminal;
+  get octotaskTerminal() {
+    return this.#terminalStore.octotaskTerminal;
   }
   get alert() {
     return this.actionAlert;
@@ -143,8 +143,8 @@ export class WorkbenchStore {
   attachTerminal(terminal: ITerminal) {
     this.#terminalStore.attachTerminal(terminal);
   }
-  attachOctoTerminal(terminal: ITerminal) {
-    this.#terminalStore.attachOctoTerminal(terminal);
+  attachOctotaskTerminal(terminal: ITerminal) {
+    this.#terminalStore.attachOctotaskTerminal(terminal);
   }
 
   detachTerminal(terminal: ITerminal) {
@@ -482,8 +482,8 @@ export class WorkbenchStore {
       closed: false,
       type,
       runner: new ActionRunner(
-        webcontainer,
-        () => this.octoTerminal,
+        getWebContainer(),
+        () => this.octotaskTerminal,
         (alert) => {
           if (this.#reloadedMessages.has(messageId)) {
             return;
@@ -562,7 +562,7 @@ export class WorkbenchStore {
     }
 
     if (data.action.type === 'file') {
-      const wc = await webcontainer;
+      const wc = await getWebContainer();
       const fullPath = path.join(wc.workdir, data.action.filePath);
 
       /*

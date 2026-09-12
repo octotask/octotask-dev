@@ -3,7 +3,6 @@ import remarkGfm from 'remark-gfm';
 import type { PluggableList, Plugin } from 'unified';
 import rehypeSanitize, { defaultSchema, type Options as RehypeSanitizeOptions } from 'rehype-sanitize';
 import { SKIP, visit } from 'unist-util-visit';
-import type { UnistNode, UnistParent } from 'node_modules/unist-util-visit/lib';
 
 export const allowedHTMLElements = [
   'a',
@@ -65,7 +64,7 @@ function remarkThinkRawContent() {
     visit(tree, (node: any) => {
       if (node.type === 'html' && node.value && node.value.startsWith('<think>')) {
         const cleanedContent = node.value.slice(7);
-        node.value = `<div class="__octoThought__">${cleanedContent}`;
+        node.value = `<div class="__octotaskThought__">${cleanedContent}`;
 
         return;
       }
@@ -86,9 +85,15 @@ const rehypeSanitizeOptions: RehypeSanitizeOptions = {
     div: [
       ...(defaultSchema.attributes?.div ?? []),
       'data*',
-      ['className', '__octoArtifact__', '__octoThought__', '__octoQuickAction', '__octoSelectedElement__'],
+      [
+        'className',
+        '__octotaskArtifact__',
+        '__octotaskThought__',
+        '__octotaskQuickAction',
+        '__octotaskSelectedElement__',
+      ],
 
-      // ['className', '__octoThought__']
+      // ['className', '__octotaskThought__']
     ],
     button: [
       ...(defaultSchema.attributes?.button ?? []),
@@ -97,7 +102,7 @@ const rehypeSanitizeOptions: RehypeSanitizeOptions = {
       'disabled',
       'name',
       'value',
-      ['className', '__octoArtifact__', '__octoThought__', '__octoQuickAction'],
+      ['className', '__octotaskArtifact__', '__octotaskThought__', '__octotaskQuickAction'],
     ],
   },
   strip: [],
@@ -129,16 +134,20 @@ const limitedMarkdownPlugin: Plugin = () => {
   return (tree, file) => {
     const contents = file.toString();
 
-    visit(tree, (node: UnistNode, index, parent: UnistParent) => {
+    visit(tree, (node: any, index, parent: any) => {
       if (
         index == null ||
+        parent == null ||
         ['paragraph', 'text', 'inlineCode', 'code', 'strong', 'emphasis'].includes(node.type) ||
-        !node.position
+        node?.position?.start?.offset == null ||
+        node?.position?.end?.offset == null
       ) {
         return true;
       }
 
-      let value = contents.slice(node.position.start.offset, node.position.end.offset);
+      const startOffset = node.position.start.offset;
+      const endOffset = node.position.end.offset;
+      let value = contents.slice(startOffset, endOffset);
 
       if (node.type === 'heading') {
         value = `\n${value}`;

@@ -102,7 +102,7 @@ async function handleProxyRequest(request: Request, path: string | undefined) {
 
     // Set Git user agent if not already present
     if (!headers.has('user-agent') || !headers.get('user-agent')?.startsWith('git/')) {
-      headers.set('User-Agent', 'octotask-app git/@isomorphic-git/cors-proxy');
+      headers.set('User-Agent', 'git/@isomorphic-git/cors-proxy');
     }
 
     console.log('Request headers:', Object.fromEntries(headers.entries()));
